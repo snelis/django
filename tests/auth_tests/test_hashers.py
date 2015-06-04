@@ -28,7 +28,6 @@ except ImportError:
 class PBKDF2SingleIterationHasher(PBKDF2PasswordHasher):
     iterations = 1
 
-
 @override_settings(PASSWORD_HASHERS=PASSWORD_HASHERS)
 class TestUtilsHashPass(SimpleTestCase):
 
@@ -343,6 +342,25 @@ class TestUtilsHashPass(SimpleTestCase):
                 'auth_tests.test_hashers.PBKDF2SingleIterationHasher']):
             self.assertTrue(check_password('letmein', encoded, setter))
             self.assertTrue(state['upgraded'])
+
+    def test_duplicate_algorithm_hasher(self):
+        with self.settings(PASSWORD_HASHERS=[
+                'auth_tests.test_hashers.PBKDF2SingleIterationHasher',
+                'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+                ]):
+            encoded = make_password('letmein')
+            algo, iterations, salt, hash = encoded.split('$', 3)
+            hasher = identify_hasher(algo)
+            self.assertEquals(PBKDF2SingleIterationHasher, type(hasher))
+
+        with self.settings(PASSWORD_HASHERS=[
+                'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+                'auth_tests.test_hashers.PBKDF2SingleIterationHasher',
+                ]):
+            encoded = make_password('letmein')
+            algo, iterations, salt, hash = encoded.split('$', 3)
+            hasher = identify_hasher(algo)
+            self.assertEquals(PBKDF2PasswordHasher, type(hasher))
 
     def test_load_library_no_algorithm(self):
         with self.assertRaises(ValueError) as e:

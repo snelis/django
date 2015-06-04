@@ -91,7 +91,7 @@ def get_hashers():
 
 @lru_cache.lru_cache()
 def get_hashers_by_algorithm():
-    return {hasher.algorithm: hasher for hasher in get_hashers()}
+    return {hasher.algorithm: hasher for hasher in reversed(get_hashers())}
 
 
 @receiver(setting_changed)
